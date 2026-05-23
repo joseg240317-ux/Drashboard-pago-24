@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pago 24 · Dashboard Operativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ─── RESET & TOKENS ─────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:       #f0f2f5;
+  --surface:  #ffffff;
+  --surface2: #f7f8fa;
+  --border:   #e5e8ed;
+  --border2:  #d0d5dd;
+
+  --blue:     #1d4ed8;
+  --blue-lt:  #eff6ff;
+  --blue-md:  #bfdbfe;
+  --navy:     #0f2251;
+
+  --green:    #16a34a;
+  --green-lt: #f0fdf4;
+  --green-md: #bbf7d0;
+
+  --amber:    #d97706;
+  --amber-lt: #fffbeb;
+  --amber-md: #fde68a;
+
+  --red:      #dc2626;
+  --red-lt:   #fef2f2;
+  --red-md:   #fecaca;
+
+  --slate:    #64748b;
+  --slate-lt: #f1f5f9;
+
+  --text:     #0f172a;
+  --text2:    #475569;
+  --text3:    #94a3b8;
+
+  --font:     'DM Sans', sans-serif;
+  --mono:     'DM Mono', monospace;
+
+  --radius:   10px;
+  --shadow:   0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08);
+
+  --sidebar-w: 220px;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+
+/* ─── LAYOUT ─────────────────────────────────────────────── */
+.shell{display:flex;height:100vh;overflow:hidden}
+
+/* ─── SIDEBAR ────────────────────────────────────────────── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--navy);
+  display:flex;flex-direction:column;
+  padding:0;overflow-y:auto;
+}
+.sb-logo{
+  padding:22px 20px 18px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.sb-logo-name{
+  font-size:17px;font-weight:700;color:#fff;letter-spacing:-.3px;
+}
+.sb-logo-sub{
+  font-size:11px;color:rgba(255,255,255,.45);font-family:var(--mono);margin-top:2px;
+}
+.sb-section{
+  padding:16px 12px 6px;
+  font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);
+}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;margin:1px 8px;border-radius:7px;
+  color:rgba(255,255,255,.65);font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .15s;text-decoration:none;
+}
+.sb-item:hover{background:rgba(255,255,255,.08);color:#fff}
+.sb-item.active{background:rgba(255,255,255,.12);color:#fff}
+.sb-item .icon{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.sb-badge{
+  margin-left:auto;background:rgba(239,68,68,.85);color:#fff;
+  font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;
+  font-family:var(--mono);
+}
+.sb-footer{
+  margin-top:auto;padding:16px 14px;
+  border-top:1px solid rgba(255,255,255,.08);
+  font-size:11px;color:rgba(255,255,255,.3);
+}
+.sb-user{font-size:12px;color:rgba(255,255,255,.6);font-weight:500}
+
+/* ─── MAIN ───────────────────────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ─── TOPBAR ─────────────────────────────────────────────── */
+.topbar{
+  background:var(--surface);border-bottom:1px solid var(--border);
+  padding:0 24px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.topbar-title{font-size:15px;font-weight:600;color:var(--text)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-time{font-size:11px;font-family:var(--mono);color:var(--text3);background:var(--surface2);padding:4px 10px;border-radius:5px;border:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:var(--font);transition:all .15s}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:#1a44c8}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface2)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.2);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ─── CONTENT AREA ───────────────────────────────────────── */
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* ─── CONFIG BANNER ─────────────────────────────────────── */
+.config-banner{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 18px;
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:20px;flex-wrap:wrap;
+  box-shadow:var(--shadow);
+}
+.config-banner label{font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap}
+.config-banner input{
+  background:var(--surface2);border:1px solid var(--border2);
+  color:var(--text);padding:6px 11px;border-radius:6px;
+  font-size:11px;font-family:var(--mono);flex:1;min-width:180px;
+}
+.config-banner input:focus{outline:none;border-color:var(--blue)}
+.conn-status{font-size:11px;font-family:var(--mono);color:var(--text3);margin-left:4px}
+
+/* ─── SCREENS ────────────────────────────────────────────── */
+.screen{display:none}
+.screen.active{display:block}
+
+/* ─── SECTION HEADER ─────────────────────────────────────── */
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-size:16px;font-weight:700;color:var(--text)}
+.section-sub{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* ─── KPI CARDS ──────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.kpi{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 18px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-blue::before{background:var(--blue)}.kpi-green::before{background:var(--green)}.kpi-red::before{background:var(--red)}.kpi-amber::before{background:var(--amber)}.kpi-slate::before{background:var(--slate)}
+.kpi-icon{font-size:20px;margin-bottom:8px}
+.kpi-val{font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1;font-family:var(--mono);color:var(--text)}
+.kpi-label{font-size:11px;color:var(--text3);margin-top:5px;font-weight:500}
+.kpi-trend{font-size:10px;font-family:var(--mono);margin-top:4px}
+.trend-up{color:var(--green)}.trend-down{color:var(--red)}.trend-neu{color:var(--slate)}
+
+/* ─── GRID PANELS ────────────────────────────────────────── */
+.panel-grid{display:grid;gap:16px;margin-bottom:20px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g13{grid-template-columns:1fr 2.4fr}
+.panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:18px;
+  box-shadow:var(--shadow);
+}
+.panel-title{
+  font-size:12px;font-weight:600;color:var(--text2);
+  letter-spacing:.04em;text-transform:uppercase;margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-title-action{
+  font-size:11px;font-weight:500;color:var(--blue);
+  text-transform:none;letter-spacing:0;cursor:pointer;
+}
+
+/* ─── ALERT ITEMS ────────────────────────────────────────── */
+.alert-item{
+  display:flex;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--border);
+}
+.alert-item:last-child{border-bottom:none}
+.alert-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.ad-red{background:var(--red);box-shadow:0 0 0 3px var(--red-lt)}
+.ad-amber{background:var(--amber);box-shadow:0 0 0 3px var(--amber-lt)}
+.ad-blue{background:var(--blue);box-shadow:0 0 0 3px var(--blue-lt)}
+.ad-green{background:var(--green);box-shadow:0 0 0 3px var(--green-lt)}
+.alert-text{flex:1}
+.alert-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px}
+.alert-meta{font-size:11px;color:var(--text3)}
+
+/* ─── BADGES ─────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;font-family:var(--mono)}
+.b-red{background:var(--red-lt);color:var(--red)}
+.b-amber{background:var(--amber-lt);color:var(--amber)}
+.b-green{background:var(--green-lt);color:var(--green)}
+.b-blue{background:var(--blue-lt);color:var(--blue)}
+.b-slate{background:var(--slate-lt);color:var(--slate)}
+
+/* ─── TABLE ──────────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{
+  text-align:left;padding:8px 10px;
+  font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text3);border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+.tbl th:first-child{border-radius:7px 0 0 0}
+.tbl th:last-child{border-radius:0 7px 0 0}
+.tbl td{padding:10px;border-bottom:1px solid var(--border);color:var(--text2);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--surface2)}
+.tbl-name{font-weight:600;color:var(--text);font-size:12px}
+.tbl-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.btn-tbl{
+  padding:4px 10px;border-radius:5px;font-size:10px;font-weight:600;
+  background:var(--blue-lt);color:var(--blue);border:none;cursor:pointer;
+  font-family:var(--font);
+}
+.btn-tbl:hover{background:var(--blue-md)}
+
+/* ─── FILTERS ────────────────────────────────────────────── */
+.filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.filter-select{
+  padding:6px 10px;border-radius:6px;border:1px solid var(--border2);
+  background:var(--surface);color:var(--text2);font-size:12px;
+  font-family:var(--font);cursor:pointer;
+}
+.filter-search{
+  padding:6px 12px;border-radius:6px;border:1px solid var(--border2);
+  background:var(--surface);color:var(--text);font-size:12px;
+  flex:1;min-width:180px;font-family:var(--font);
+}
+.filter-search:focus,.filter-select:focus{outline:none;border-color:var(--blue)}
+
+/* ─── EMPLOYEE CARDS ─────────────────────────────────────── */
+.emp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:20px}
+.emp-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:20px;
+  box-shadow:var(--shadow);position:relative;
+}
+.emp-medal{position:absolute;top:16px;right:16px;font-size:22px}
+.emp-avatar{
+  width:44px;height:44px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue) 0%,#6366f1 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:700;color:#fff;margin-bottom:10px;
+}
+.emp-name{font-size:14px;font-weight:700;color:var(--text)}
+.emp-role{font-size:11px;color:var(--text3);margin-top:2px;margin-bottom:14px}
+.score-wrap{margin-bottom:14px}
+.score-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+.score-num{font-size:24px;font-weight:700;font-family:var(--mono);color:var(--text)}
+.score-denom{font-size:13px;color:var(--text3)}
+.score-bar-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:3px;transition:width .6s ease}
+.score-a{background:linear-gradient(90deg,#16a34a,#22c55e)}
+.score-b{background:linear-gradient(90deg,#2563eb,#60a5fa)}
+.score-c{background:linear-gradient(90deg,#d97706,#fbbf24)}
+.score-d{background:linear-gradient(90deg,#dc2626,#f87171)}
+.emp-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-top:12px;border-top:1px solid var(--border)}
+.emp-stat{text-align:center}
+.emp-stat-n{display:block;font-size:18px;font-weight:700;font-family:var(--mono);color:var(--text)}
+.emp-stat-l{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-top:1px}
+
+/* ─── CATEGORY BARS ──────────────────────────────────────── */
+.cat-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.cat-row:last-child{border-bottom:none}
+.cat-label{font-size:12px;color:var(--text2);width:130px;flex-shrink:0}
+.cat-bar-bg{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.cat-bar{height:100%;border-radius:3px}
+.cat-count{font-family:var(--mono);font-size:11px;color:var(--text3);width:24px;text-align:right;flex-shrink:0}
+
+/* ─── DAILY SUMMARY ──────────────────────────────────────── */
+.daily-hero{
+  background:linear-gradient(135deg,var(--navy) 0%,#1d4ed8 100%);
+  border-radius:var(--radius);padding:24px;color:#fff;margin-bottom:20px;
+  box-shadow:var(--shadow-md);position:relative;overflow:hidden;
+}
+.daily-hero::before{
+  content:'';position:absolute;right:-30px;top:-30px;
+  width:180px;height:180px;border-radius:50%;
+  background:rgba(255,255,255,.04);
+}
+.daily-hero-date{font-size:12px;opacity:.6;font-family:var(--mono);margin-bottom:6px}
+.daily-hero-title{font-size:20px;font-weight:700;margin-bottom:16px}
+.daily-hero-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:16px}
+.daily-stat{text-align:center;padding:12px;background:rgba(255,255,255,.08);border-radius:8px}
+.daily-stat-n{font-size:26px;font-weight:700;font-family:var(--mono)}
+.daily-stat-l{font-size:10px;opacity:.65;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+/* ─── MISC ───────────────────────────────────────────────── */
+.empty{padding:32px;text-align:center;color:var(--text3);font-size:13px}
+.empty-icon{font-size:28px;margin-bottom:8px}
+.loading{padding:24px;text-align:center;color:var(--text3);font-size:12px;font-family:var(--mono)}
+.chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;
+  background:var(--blue-lt);color:var(--blue);
+}
+.divider{height:1px;background:var(--border);margin:16px 0}
+.text-truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+
+@media(max-width:900px){
+  .sidebar{display:none}
+  .g2,.g3,.g13{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- ─── SIDEBAR ──────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div style="font-size:22px;margin-bottom:6px">💳</div>
+    <div class="sb-logo-name">Pago 24</div>
+    <div class="sb-logo-sub">Dashboard Operativo</div>
+  </div>
+
+  <div class="sb-section">Principal</div>
+  <a class="sb-item active" onclick="show('resumen')" href="#">
+    <span class="icon">◼</span> Resumen general
+  </a>
+  <a class="sb-item" onclick="show('operacion')" href="#">
+    <span class="icon">⚡</span> Operación en vivo
+    <span class="sb-badge" id="sb-urgentes">0</span>
+  </a>
+  <a class="sb-item" onclick="show('casos-abiertos')" href="#">
+    <span class="icon">📂</span> Casos abiertos
+  </a>
+  <a class="sb-item" onclick="show('casos-resueltos')" href="#">
+    <span class="icon">✅</span> Casos resueltos
+  </a>
+
+  <div class="sb-section">Gestión</div>
+  <a class="sb-item" onclick="show('personal')" href="#">
+    <span class="icon">👥</span> Personal
+  </a>
+  <a class="sb-item" onclick="show('reporte')" href="#">
+    <span class="icon">📊</span> Reporte diario
+  </a>
+
+  <div class="sb-footer">
+    <div class="sb-user">👤 Marcos</div>
+    <div style="margin-top:4px" id="sb-update"></div>
+  </div>
+</aside>
+
+<!-- ─── MAIN ──────────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Resumen general</div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-dot" id="liveDot" style="background:#94a3b8"></div>
+      <div class="topbar-time" id="topbarTime">--:-- hs</div>
+      <button class="btn btn-ghost" onclick="loadAll()">↻ Actualizar</button>
+      <a class="btn btn-primary" id="formBtn" href="#" target="_blank">+ Gestionar caso</a>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- CONFIG -->
+    <div class="config-banner" id="configBanner">
+      <label>SUPABASE URL</label>
+      <input id="sbUrl" placeholder="https://xxxx.supabase.co">
+      <label>ANON KEY</label>
+      <input id="sbKey" type="password" placeholder="eyJ..." style="max-width:200px">
+      <button class="btn btn-primary" onclick="connect()">Conectar</button>
+      <span class="conn-status" id="connStatus">Sin conexión</span>
+    </div>
+
+    <!-- ══ SCREEN: RESUMEN ══════════════════════════════════ -->
+    <div class="screen active" id="screen-resumen">
+
+      <div class="section-head">
+        <div>
+          <div class="section-title">Resumen ejecutivo</div>
+          <div class="section-sub">Estado en tiempo real de la operación</div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi kpi-blue">
+          <div class="kpi-icon">💬</div>
+          <div class="kpi-val" id="k-total">—</div>
+          <div class="kpi-label">Casos totales</div>
+        </div>
+        <div class="kpi kpi-amber">
+          <div class="kpi-icon">📂</div>
+          <div class="kpi-val" id="k-open">—</div>
+          <div class="kpi-label">Casos abiertos</div>
+        </div>
+        <div class="kpi kpi-red">
+          <div class="kpi-icon">🔴</div>
+          <div class="kpi-val" id="k-urgent">—</div>
+          <div class="kpi-label">Urgentes</div>
+        </div>
+        <div class="kpi kpi-green">
+          <div class="kpi-icon">✅</div>
+          <div class="kpi-val" id="k-resolved">—</div>
+          <div class="kpi-label">Resueltos hoy</div>
+        </div>
+        <div class="kpi kpi-blue">
+          <div class="kpi-icon">📋</div>
+          <div class="kpi-val" id="k-marcos">—</div>
+          <div class="kpi-label">Req. Marcos</div>
+        </div>
+        <div class="kpi kpi-green">
+          <div class="kpi-icon">📈</div>
+          <div class="kpi-val" id="k-rate">—%</div>
+          <div class="kpi-label">Tasa resolución</div>
+        </div>
+      </div>
+
+      <div class="panel-grid g2">
+        <div class="panel">
+          <div class="panel-title">Alertas activas <span class="panel-title-action" onclick="show('operacion')">Ver todas →</span></div>
+          <div id="alertFeed"><div class="loading">Cargando...</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Categorías más frecuentes</div>
+          <div id="catBars"><div class="loading">Cargando...</div></div>
+        </div>
+      </div>
+
+      <div class="panel-grid g13">
+        <div class="panel">
+          <div class="panel-title">Distribución de estados</div>
+          <canvas id="chartStatus" height="200"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Actividad reciente</div>
+          <div id="recentActivity"><div class="loading">Cargando...</div></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ SCREEN: OPERACION ════════════════════════════════ -->
+    <div class="screen" id="screen-operacion">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Operación en vivo</div>
+          <div class="section-sub">Casos que requieren atención inmediata</div>
+        </div>
+      </div>
+      <div id="urgentCards"><div class="loading">Cargando...</div></div>
+    </div>
+
+    <!-- ══ SCREEN: CASOS ABIERTOS ═══════════════════════════ -->
+    <div class="screen" id="screen-casos-abiertos">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Casos abiertos</div>
+          <div class="section-sub">Todos los casos activos del sistema</div>
+        </div>
+      </div>
+      <div class="filter-row">
+        <input class="filter-search" id="f-search" placeholder="🔍  Buscar por cliente, tipo, canal..." oninput="renderOpenTable()">
+        <select class="filter-select" id="f-urgency" onchange="renderOpenTable()">
+          <option value="">Todas las urgencias</option>
+          <option value="urgente">Urgente</option>
+          <option value="media">Media</option>
+          <option value="baja">Baja</option>
+        </select>
+        <select class="filter-select" id="f-status" onchange="renderOpenTable()">
+          <option value="">Todos los estados</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="en_revision">En revisión</option>
+          <option value="derivado">Derivado</option>
+          <option value="sin_respuesta">Sin respuesta</option>
+          <option value="critico">Crítico</option>
+        </select>
+        <select class="filter-select" id="f-employee" onchange="renderOpenTable()">
+          <option value="">Todos los empleados</option>
+        </select>
+      </div>
+      <div class="panel" style="padding:0">
+        <div class="tbl-wrap">
+          <div id="openTable"><div class="loading">Cargando...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: CASOS RESUELTOS ══════════════════════════ -->
+    <div class="screen" id="screen-casos-resueltos">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Casos resueltos</div>
+          <div class="section-sub">Historial de conversaciones cerradas</div>
+        </div>
+      </div>
+      <div class="panel" style="padding:0">
+        <div class="tbl-wrap">
+          <div id="resolvedTable"><div class="loading">Cargando...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: PERSONAL ══════════════════════════════════ -->
+    <div class="screen" id="screen-personal">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Rendimiento del personal</div>
+          <div class="section-sub">Métricas de los últimos 30 días por empleado</div>
+        </div>
+      </div>
+      <div class="emp-grid" id="empCards"><div class="loading">Cargando...</div></div>
+      <div class="panel">
+        <div class="panel-title">Tabla comparativa del equipo</div>
+        <div class="tbl-wrap" id="empTable"><div class="loading">Cargando...</div></div>
+      </div>
+      <div class="panel-grid g2" style="margin-top:16px">
+        <div class="panel">
+          <div class="panel-title">Casos por empleado</div>
+          <canvas id="chartEmpCases" height="220"></canvas>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Tasa de resolución (%)</div>
+          <canvas id="chartEmpRate" height="220"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: REPORTE ═══════════════════════════════════ -->
+    <div class="screen" id="screen-reporte">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Reporte del día</div>
+          <div class="section-sub" id="reportDate">—</div>
+        </div>
+      </div>
+      <div class="daily-hero" id="dailyHero">
+        <div class="daily-hero-date" id="heroDate">—</div>
+        <div class="daily-hero-title">Resumen operativo del día</div>
+        <div class="daily-hero-grid" id="heroStats">
+          <div class="loading" style="color:rgba(255,255,255,.5)">Cargando...</div>
+        </div>
+      </div>
+      <div class="panel-grid g2">
+        <div class="panel">
+          <div class="panel-title">Performance del equipo hoy</div>
+          <div id="todayEmpStats"><div class="loading">Cargando...</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Casos abiertos al cierre</div>
+          <div id="todayOpenCases"><div class="loading">Cargando...</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+/* ─── CONFIG ─────────────────────────────────────────────── */
+let SB_URL = '', SB_KEY = '';
+const FORM_URL = 'https://REEMPLAZAR.app.n8n.cloud/webhook/pago24/operador/form';
+
+let DATA = { open:[], resolved:[], empPerf:[], alerts:[] };
+let charts = {};
+
+/* ─── CLOCK ──────────────────────────────────────────────── */
+function tick(){
+  const t = new Date().toLocaleTimeString('es-AR',{
+    timeZone:'America/Argentina/Buenos_Aires',
+    hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
+  });
+  document.getElementById('topbarTime').textContent = t + ' hs';
+}
+tick(); setInterval(tick,1000);
+
+/* ─── NAVIGATION ─────────────────────────────────────────── */
+const titles = {
+  resumen:'Resumen general', operacion:'Operación en vivo',
+  'casos-abiertos':'Casos abiertos', 'casos-resueltos':'Casos resueltos',
+  personal:'Personal', reporte:'Reporte diario'
+};
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  event?.target?.closest?.('.sb-item')?.classList.add('active');
+  document.querySelectorAll('.sb-item').forEach(i=>{
+    if(i.getAttribute('onclick')?.includes("'"+id+"'")) i.classList.add('active');
+  });
+  document.getElementById('topbar-title').textContent = titles[id]||id;
+}
+
+/* ─── SUPABASE ───────────────────────────────────────────── */
+async function sbGet(path, params={}){
+  const url = new URL(SB_URL+'/rest/v1/'+path);
+  Object.entries(params).forEach(([k,v])=>url.searchParams.append(k,v));
+  const r = await fetch(url, {headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,Accept:'application/json'}});
+  if(!r.ok) throw new Error('Supabase '+r.status);
+  return r.json();
+}
+
+function connect(){
+  SB_URL = document.getElementById('sbUrl').value.trim().replace(/\/$/,'');
+  SB_KEY = document.getElementById('sbKey').value.trim();
+  document.getElementById('formBtn').href = FORM_URL;
+  loadAll();
+}
+
+async function loadAll(){
+  if(!SB_URL||!SB_KEY) return;
+  document.getElementById('liveDot').style.background='#f59e0b';
+  document.getElementById('connStatus').textContent='Cargando...';
+  try{
+    const [open,resolved,empPerf] = await Promise.all([
+      sbGet('v_cases_open',{limit:'60',order:'last_inbound_at.desc.nullslast'}).catch(()=>
+        sbGet('conversations',{select:'id,status,resolution_status,case_type,business_issue,max_urgency,risk_level,responsible_area,requires_marcos,requires_follow_up,last_inbound_at,operational_summary,main_category',status:'neq.resuelto',limit:'60'}).catch(()=>[])),
+      sbGet('v_cases_resolved',{limit:'30',order:'resolved_at.desc.nullslast'}).catch(()=>
+        sbGet('conversations',{select:'id,status,resolution_status,case_type,main_category,max_urgency,resolution_minutes,first_response_minutes',resolution_status:'in.(resuelto_confirmado,cerrado)',limit:'30'}).catch(()=>[])),
+      sbGet('v_employee_performance').catch(()=>[])
+    ]);
+    DATA = {open, resolved, empPerf};
+    renderAll();
+    document.getElementById('liveDot').style.background='#22c55e';
+    document.getElementById('connStatus').textContent='✓ Conectado';
+    document.getElementById('connStatus').style.color='#16a34a';
+    const now = new Date().toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+    document.getElementById('sb-update').textContent='Actualizado '+now;
+    document.getElementById('sb-update').style.color='rgba(255,255,255,.35)';
+    document.getElementById('sb-update').style.fontSize='10px';
+  }catch(e){
+    document.getElementById('liveDot').style.background='#ef4444';
+    document.getElementById('connStatus').textContent='✗ Error: '+e.message;
+    document.getElementById('connStatus').style.color='#dc2626';
+  }
+}
+
+/* ─── HELPERS ────────────────────────────────────────────── */
+const esc = s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const urgBadge = u=>u==='urgente'?'<span class="badge b-red">urgente</span>':u==='media'?'<span class="badge b-amber">media</span>':'<span class="badge b-slate">baja</span>';
+const stBadge  = s=>{
+  const map={en_revision:'b-blue',pendiente_area:'b-amber',posible_resuelto:'b-slate',resuelto_confirmado:'b-green',cerrado:'b-green',pendiente:'b-slate',critico:'b-red',sin_respuesta:'b-amber',derivado:'b-blue'};
+  return `<span class="badge ${map[s]||'b-slate'}">${s||'pendiente'}</span>`;
+};
+const initials = n=>String(n||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+const scoreClass = s=>s>=80?'score-a':s>=60?'score-b':s>=40?'score-c':'score-d';
+const scoreBadge = s=>s>=80?'Excelente ⭐':s>=60?'Bueno 👍':s>=40?'Regular 📋':'Necesita mejora ⚠️';
+const medal = i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+
+/* ─── RENDER ALL ─────────────────────────────────────────── */
+function renderAll(){
+  renderKPIs();
+  renderAlertFeed();
+  renderCatBars();
+  renderStatusChart();
+  renderRecentActivity();
+  renderUrgentCards();
+  renderOpenTable();
+  renderResolvedTable();
+  renderEmployeeCards();
+  renderEmployeeTable();
+  renderEmployeeCharts();
+  renderDailyReport();
+  updateFilterEmployees();
+}
+
+/* ─── KPIs ───────────────────────────────────────────────── */
+function renderKPIs(){
+  const open     = DATA.open;
+  const resolved = DATA.resolved;
+  const urgent   = open.filter(c=>c.max_urgency==='urgente').length;
+  const marcos   = open.filter(c=>c.requires_marcos).length;
+  const today    = new Date().toISOString().substring(0,10);
+  const resolvedToday = resolved.filter(c=>(c.resolved_at||'').startsWith(today)).length;
+  const total    = open.length + resolvedToday;
+  const rate     = total>0?Math.round(resolvedToday/total*100):0;
+  document.getElementById('k-total').textContent   = total;
+  document.getElementById('k-open').textContent    = open.length;
+  document.getElementById('k-urgent').textContent  = urgent;
+  document.getElementById('k-resolved').textContent= resolvedToday;
+  document.getElementById('k-marcos').textContent  = marcos;
+  document.getElementById('k-rate').textContent    = rate+'%';
+  document.getElementById('sb-urgentes').textContent = urgent;
+  document.getElementById('sb-urgentes').style.display = urgent>0?'':'none';
+}
+
+/* ─── ALERT FEED ─────────────────────────────────────────── */
+function renderAlertFeed(){
+  const urgent = DATA.open.filter(c=>c.max_urgency==='urgente'||c.requires_marcos||c.risk_level==='critico').slice(0,5);
+  const el = document.getElementById('alertFeed');
+  if(!urgent.length){el.innerHTML='<div class="alert-item"><div class="alert-dot ad-green"></div><div class="alert-text"><div class="alert-title">Sin alertas activas</div><div class="alert-meta">Todos los casos están bajo control</div></div></div>';return;}
+  el.innerHTML = urgent.map(c=>{
+    const cls = c.risk_level==='critico'?'ad-red':c.max_urgency==='urgente'?'ad-amber':'ad-blue';
+    const mins = c.minutes_waiting?Math.round(c.minutes_waiting):null;
+    return `<div class="alert-item">
+      <div class="alert-dot ${cls}"></div>
+      <div class="alert-text">
+        <div class="alert-title">${esc(c.contact_name||c.case_type||'Caso sin categoría')}</div>
+        <div class="alert-meta">${esc(c.channel_name||c.channel_internal_name||'')} ${mins?`· ${mins} min sin respuesta`:''} ${c.requires_marcos?'· Requiere Marcos':''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── CATEGORY BARS ──────────────────────────────────────── */
+function renderCatBars(){
+  const counts={};
+  DATA.open.forEach(c=>{const k=c.main_category||c.case_type||c.business_issue||'otro';counts[k]=(counts[k]||0)+1;});
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const max=sorted[0]?.[1]||1;
+  const colors=['#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe'];
+  const el=document.getElementById('catBars');
+  if(!sorted.length){el.innerHTML='<div class="empty"><div class="empty-icon">📂</div>Sin datos todavía</div>';return;}
+  el.innerHTML=sorted.map(([k,v],i)=>`
+    <div class="cat-row">
+      <span class="cat-label">${esc(k)}</span>
+      <div class="cat-bar-bg"><div class="cat-bar" style="width:${Math.round(v/max*100)}%;background:${colors[i%7]}"></div></div>
+      <span class="cat-count">${v}</span>
+    </div>`).join('');
+}
+
+/* ─── STATUS CHART ───────────────────────────────────────── */
+function renderStatusChart(){
+  const counts={pendiente:0,critico:0,sin_respuesta:0,en_revision:0,derivado:0};
+  DATA.open.forEach(c=>{const k=c.status||'pendiente';if(counts[k]!==undefined)counts[k]++;else counts['pendiente']++;});
+  const labels=Object.keys(counts);
+  const data=Object.values(counts);
+  if(charts.status){charts.status.destroy();}
+  const ctx=document.getElementById('chartStatus').getContext('2d');
+  charts.status=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:['#60a5fa','#f87171','#fbbf24','#818cf8','#34d399'],borderWidth:0,hoverOffset:4}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{font:{family:'DM Mono',size:10},padding:12,boxWidth:10}}},cutout:'72%'}});
+}
+
+/* ─── RECENT ACTIVITY ────────────────────────────────────── */
+function renderRecentActivity(){
+  const el=document.getElementById('recentActivity');
+  const items=DATA.open.slice(0,6);
+  if(!items.length){el.innerHTML='<div class="empty">Sin actividad reciente</div>';return;}
+  el.innerHTML=`<table class="tbl">
+    <thead><tr><th>Cliente</th><th>Tipo</th><th>Urgencia</th><th>Empleado</th><th>Espera</th></tr></thead>
+    <tbody>${items.map(c=>{
+      const mins=c.minutes_waiting?Math.round(c.minutes_waiting):0;
+      return `<tr>
+        <td><div class="tbl-name text-truncate">${esc(c.contact_name||'Sin nombre')}</div><div class="tbl-sub">${esc(c.contact_phone||'')}</div></td>
+        <td><span style="font-size:11px">${esc(c.main_category||c.case_type||'—')}</span></td>
+        <td>${urgBadge(c.max_urgency)}</td>
+        <td style="font-size:11px;color:var(--text2)">${esc(c.employee_name||'—')}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:${mins>30?'var(--red)':mins>15?'var(--amber)':'var(--text3)'}">${mins}m</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+/* ─── URGENT CARDS ───────────────────────────────────────── */
+function renderUrgentCards(){
+  const urgent=DATA.open.filter(c=>c.max_urgency==='urgente'||c.risk_level==='critico'||c.requires_marcos);
+  const el=document.getElementById('urgentCards');
+  if(!urgent.length){el.innerHTML='<div class="panel"><div class="empty"><div class="empty-icon">✅</div><div>Sin casos urgentes activos</div><div style="margin-top:6px;font-size:12px">La operación está bajo control</div></div></div>';return;}
+  el.innerHTML=urgent.map(c=>{
+    const mins=c.minutes_waiting?Math.round(c.minutes_waiting):0;
+    const risk=c.risk_level||'medio';
+    const riskColor=risk==='critico'?'var(--red)':risk==='alto'?'var(--amber)':'var(--blue)';
+    return `<div class="panel" style="border-left:3px solid ${riskColor};margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px">${esc(c.contact_name||'Sin nombre')} <span style="font-weight:400;color:var(--text3)">${esc(c.contact_phone||'')}</span></div>
+          <div style="font-size:12px;color:var(--text2)">${esc(c.channel_name||'')} · Empleado: ${esc(c.employee_name||'Sin asignar')}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          ${urgBadge(c.max_urgency)}
+          ${c.requires_marcos?'<span class="badge b-red">Marcos</span>':''}
+          <span class="badge b-blue">${esc(risk)}</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;padding:12px;background:var(--surface2);border-radius:7px;margin-bottom:10px">
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Tipo de caso</div><div style="font-size:12px;font-weight:600;margin-top:2px">${esc(c.case_type||c.main_category||'—')}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Problema</div><div style="font-size:12px;font-weight:600;margin-top:2px">${esc(c.business_issue||'—')}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Área</div><div style="font-size:12px;font-weight:600;margin-top:2px">${esc(c.responsible_area||'—')}</div></div>
+        <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Tiempo espera</div><div style="font-size:12px;font-weight:700;margin-top:2px;color:${mins>30?'var(--red)':'var(--text)'}">${mins} min</div></div>
+      </div>
+      ${c.operational_summary?`<div style="font-size:11px;color:var(--text2);font-style:italic;margin-bottom:10px">"${esc(c.operational_summary)}"</div>`:''}
+      <div style="display:flex;gap:8px">
+        <a href="${FORM_URL}" target="_blank" class="btn btn-primary" style="font-size:11px;padding:6px 12px">Gestionar caso</a>
+        <button class="btn btn-ghost" style="font-size:11px;padding:6px 12px" onclick="copyId('${c.conversation_id||c.id}')">Copiar ID</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function copyId(id){
+  navigator.clipboard.writeText(id).then(()=>alert('ID copiado: '+id));
+}
+
+/* ─── OPEN TABLE ─────────────────────────────────────────── */
+function renderOpenTable(){
+  const search=(document.getElementById('f-search')?.value||'').toLowerCase();
+  const urgF  = document.getElementById('f-urgency')?.value||'';
+  const stF   = document.getElementById('f-status')?.value||'';
+  const empF  = document.getElementById('f-employee')?.value||'';
+  let items   = DATA.open;
+  if(search) items=items.filter(c=>JSON.stringify(c).toLowerCase().includes(search));
+  if(urgF)   items=items.filter(c=>c.max_urgency===urgF);
+  if(stF)    items=items.filter(c=>(c.resolution_status||c.status)===stF);
+  if(empF)   items=items.filter(c=>c.employee_name===empF);
+  const el=document.getElementById('openTable');
+  if(!items.length){el.innerHTML='<div class="empty"><div class="empty-icon">🔍</div>Sin resultados</div>';return;}
+  el.innerHTML=`<table class="tbl">
+    <thead><tr><th>Cliente</th><th>Canal</th><th>Tipo / Problema</th><th>Urgencia</th><th>Estado</th><th>Área</th><th>Espera</th><th>Empleado</th><th></th></tr></thead>
+    <tbody>${items.map(c=>{
+      const mins=c.minutes_waiting?Math.round(c.minutes_waiting):0;
+      return `<tr>
+        <td><div class="tbl-name">${esc(c.contact_name||'Sin nombre')}</div><div class="tbl-sub">${esc(c.contact_phone||'')}</div></td>
+        <td style="font-size:11px">${esc(c.channel_name||c.channel_internal_name||'—')}</td>
+        <td><div style="font-size:11px;font-weight:600">${esc(c.main_category||c.case_type||'—')}</div><div class="tbl-sub">${esc(c.business_issue||'')}</div></td>
+        <td>${urgBadge(c.max_urgency)}</td>
+        <td>${stBadge(c.resolution_status||c.status)}</td>
+        <td style="font-size:11px">${esc(c.responsible_area||'—')}</td>
+        <td style="font-family:var(--mono);font-size:11px;color:${mins>30?'var(--red)':mins>15?'var(--amber)':'var(--text3)'}">${mins}m</td>
+        <td style="font-size:11px">${esc(c.employee_name||'—')}</td>
+        <td><a href="${FORM_URL}" target="_blank" class="btn-tbl">Gestionar</a></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
+}
+
+function updateFilterEmployees(){
+  const sel=document.getElementById('f-employee');
+  if(!sel) return;
+  const names=[...new Set(DATA.open.map(c=>c.employee_name).filter(Boolean))];
+  sel.innerHTML='<option value="">Todos los empleados</option>'+names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+}
+
+/* ─── RESOLVED TABLE ─────────────────────────────────────── */
+function renderResolvedTable(){
+  const el=document.getElementById('resolvedTable');
+  if(!DATA.resolved.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div>Sin casos resueltos todavía</div>';return;}
+  el.innerHTML=`<table class="tbl">
+    <thead><tr><th>Cliente</th><th>Canal</th><th>Tipo</th><th>Urgencia</th><th>Empleado</th><th>Tiempo resolución</th><th>Resuelto</th></tr></thead>
+    <tbody>${DATA.resolved.slice(0,25).map(c=>`<tr>
+      <td><div class="tbl-name">${esc(c.contact_name||'Sin nombre')}</div><div class="tbl-sub">${esc(c.contact_phone||'')}</div></td>
+      <td style="font-size:11px">${esc(c.channel_name||'—')}</td>
+      <td style="font-size:11px">${esc(c.main_category||c.case_type||'—')}</td>
+      <td>${urgBadge(c.max_urgency)}</td>
+      <td style="font-size:11px">${esc(c.resolved_by_name||c.employee_name||'—')}</td>
+      <td style="font-family:var(--mono);font-size:11px">${c.resolution_minutes?Math.round(c.resolution_minutes)+' min':'—'}</td>
+      <td style="font-family:var(--mono);font-size:10px;color:var(--text3)">${c.resolved_at?new Date(c.resolved_at).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}):'—'}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+/* ─── EMPLOYEE CARDS ─────────────────────────────────────── */
+function renderEmployeeCards(){
+  const el=document.getElementById('empCards');
+  if(!DATA.empPerf.length){el.innerHTML='<div class="panel"><div class="empty"><div class="empty-icon">👥</div>Sin datos de empleados. Se calculan después del primer día completo de operación.</div></div>';return;}
+  el.innerHTML=DATA.empPerf.map((e,i)=>`
+    <div class="emp-card">
+      ${medal(i)?`<div class="emp-medal">${medal(i)}</div>`:''}
+      <div class="emp-avatar">${initials(e.employee_name)}</div>
+      <div class="emp-name">${esc(e.employee_name||'?')}</div>
+      <div class="emp-role">${esc(e.channel_internal_name||'')} · ${e.working_days||0} días</div>
+      <div class="score-wrap">
+        <div class="score-top">
+          <div><span class="score-num">${e.avg_score||0}</span><span class="score-denom"> /100</span></div>
+          <span class="badge ${e.avg_score>=80?'b-green':e.avg_score>=60?'b-blue':e.avg_score>=40?'b-amber':'b-red'}">${scoreBadge(e.avg_score||0)}</span>
+        </div>
+        <div class="score-bar-bg"><div class="score-bar-fill ${scoreClass(e.avg_score||0)}" style="width:${e.avg_score||0}%"></div></div>
+      </div>
+      <div class="emp-stats">
+        <div class="emp-stat"><span class="emp-stat-n">${e.total_conversations||0}</span><span class="emp-stat-l">casos</span></div>
+        <div class="emp-stat"><span class="emp-stat-n" style="color:var(--green)">${e.resolved_conversations||0}</span><span class="emp-stat-l">resueltos</span></div>
+        <div class="emp-stat"><span class="emp-stat-n" style="color:${(e.avg_response_minutes||0)>30?'var(--red)':'var(--text)'}">${e.avg_response_minutes||'—'}<span style="font-size:10px">m</span></span><span class="emp-stat-l">respuesta</span></div>
+        <div class="emp-stat"><span class="emp-stat-n" style="color:var(--amber)">${e.urgent_handled||0}</span><span class="emp-stat-l">urgentes</span></div>
+        <div class="emp-stat"><span class="emp-stat-n" style="color:${(e.no_response_total||0)>3?'var(--red)':'var(--text)'}">${e.no_response_total||0}</span><span class="emp-stat-l">sin resp.</span></div>
+        <div class="emp-stat"><span class="emp-stat-n">${e.resolution_rate_pct||0}%</span><span class="emp-stat-l">resolución</span></div>
+      </div>
+    </div>`).join('');
+}
+
+/* ─── EMPLOYEE TABLE ─────────────────────────────────────── */
+function renderEmployeeTable(){
+  const el=document.getElementById('empTable');
+  if(!DATA.empPerf.length){el.innerHTML='<div class="empty">Sin datos</div>';return;}
+  el.innerHTML=`<table class="tbl">
+    <thead><tr><th>#</th><th>Empleado</th><th>Canal</th><th>Casos</th><th>Resueltos</th><th>% Resol.</th><th>Sin resp.</th><th>Resp. prom.</th><th>Score</th><th>Días</th></tr></thead>
+    <tbody>${DATA.empPerf.map((e,i)=>`<tr>
+      <td style="font-family:var(--mono);font-size:13px">${medal(i)||i+1}</td>
+      <td><div class="tbl-name">${esc(e.employee_name||'?')}</div></td>
+      <td style="font-size:11px;color:var(--text3);font-family:var(--mono)">${esc(e.channel_internal_name||'')}</td>
+      <td style="font-family:var(--mono)">${e.total_conversations||0}</td>
+      <td style="font-family:var(--mono);color:var(--green)">${e.resolved_conversations||0}</td>
+      <td style="font-family:var(--mono);color:${(e.resolution_rate_pct||0)>=70?'var(--green)':'var(--amber)'}">${e.resolution_rate_pct||0}%</td>
+      <td style="font-family:var(--mono);color:${(e.no_response_total||0)>3?'var(--red)':'var(--text3)'}">${e.no_response_total||0}</td>
+      <td style="font-family:var(--mono);color:${(e.avg_response_minutes||0)>30?'var(--red)':'var(--text3)'}">${e.avg_response_minutes||'—'} min</td>
+      <td><span class="badge ${e.avg_score>=80?'b-green':e.avg_score>=60?'b-blue':e.avg_score>=40?'b-amber':'b-red'}">${e.avg_score||0}</span></td>
+      <td style="font-family:var(--mono);color:var(--text3)">${e.working_days||0}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+/* ─── EMPLOYEE CHARTS ────────────────────────────────────── */
+function renderEmployeeCharts(){
+  if(!DATA.empPerf.length) return;
+  const names   = DATA.empPerf.map(e=>e.employee_name||'?');
+  const totals  = DATA.empPerf.map(e=>e.total_conversations||0);
+  const resolved= DATA.empPerf.map(e=>e.resolved_conversations||0);
+  const rates   = DATA.empPerf.map(e=>e.resolution_rate_pct||0);
+  const colors  = ['#1d4ed8','#2563eb','#3b82f6','#60a5fa'];
+
+  if(charts.empCases){charts.empCases.destroy();}
+  charts.empCases=new Chart(document.getElementById('chartEmpCases').getContext('2d'),{
+    type:'bar',
+    data:{labels:names,datasets:[
+      {label:'Total',data:totals,backgroundColor:'rgba(29,78,216,.15)',borderColor:'#1d4ed8',borderWidth:2,borderRadius:5},
+      {label:'Resueltos',data:resolved,backgroundColor:'rgba(22,163,74,.15)',borderColor:'#16a34a',borderWidth:2,borderRadius:5}
+    ]},
+    options:{responsive:true,plugins:{legend:{labels:{font:{family:'DM Mono',size:10}}}},scales:{x:{ticks:{font:{family:'DM Mono',size:10}}},y:{ticks:{font:{family:'DM Mono',size:10}}}}}
+  });
+
+  if(charts.empRate){charts.empRate.destroy();}
+  charts.empRate=new Chart(document.getElementById('chartEmpRate').getContext('2d'),{
+    type:'bar',
+    data:{labels:names,datasets:[{label:'% Resolución',data:rates,backgroundColor:rates.map(r=>r>=70?'rgba(22,163,74,.2)':'rgba(217,119,6,.2)'),borderColor:rates.map(r=>r>=70?'#16a34a':'#d97706'),borderWidth:2,borderRadius:5}]},
+    options:{responsive:true,scales:{y:{max:100,ticks:{font:{family:'DM Mono',size:10},callback:v=>v+'%'}},x:{ticks:{font:{family:'DM Mono',size:10}}}},plugins:{legend:{display:false}}}
+  });
+}
+
+/* ─── DAILY REPORT ───────────────────────────────────────── */
+function renderDailyReport(){
+  const open     = DATA.open;
+  const resolved = DATA.resolved;
+  const today    = new Date().toISOString().substring(0,10);
+  const todayRes = resolved.filter(c=>(c.resolved_at||'').startsWith(today)).length;
+  const urgent   = open.filter(c=>c.max_urgency==='urgente').length;
+  const noResp   = open.filter(c=>c.status==='sin_respuesta').length;
+  const marcos   = open.filter(c=>c.requires_marcos).length;
+
+  const dateStr = new Date().toLocaleDateString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('reportDate').textContent=dateStr;
+  document.getElementById('heroDate').textContent=dateStr.charAt(0).toUpperCase()+dateStr.slice(1);
+
+  document.getElementById('heroStats').innerHTML=`
+    <div class="daily-stat"><div class="daily-stat-n">${open.length+todayRes}</div><div class="daily-stat-l">Total casos</div></div>
+    <div class="daily-stat"><div class="daily-stat-n">${open.length}</div><div class="daily-stat-l">Abiertos</div></div>
+    <div class="daily-stat"><div class="daily-stat-n">${todayRes}</div><div class="daily-stat-l">Resueltos</div></div>
+    <div class="daily-stat"><div class="daily-stat-n">${urgent}</div><div class="daily-stat-l">Urgentes</div></div>
+    <div class="daily-stat"><div class="daily-stat-n">${noResp}</div><div class="daily-stat-l">Sin resp.</div></div>
+    <div class="daily-stat"><div class="daily-stat-n">${marcos}</div><div class="daily-stat-l">Req. Marcos</div></div>`;
+
+  const empEl=document.getElementById('todayEmpStats');
+  if(DATA.empPerf.length){
+    empEl.innerHTML=`<table class="tbl">
+      <thead><tr><th>Empleado</th><th>Casos</th><th>Resueltos</th><th>Score</th></tr></thead>
+      <tbody>${DATA.empPerf.map(e=>`<tr>
+        <td><div class="tbl-name">${esc(e.employee_name)}</div></td>
+        <td style="font-family:var(--mono)">${e.total_conversations||0}</td>
+        <td style="font-family:var(--mono);color:var(--green)">${e.resolved_conversations||0}</td>
+        <td><span class="badge ${e.avg_score>=80?'b-green':e.avg_score>=60?'b-blue':e.avg_score>=40?'b-amber':'b-red'}">${e.avg_score||0}</span></td>
+      </tr>`).join('')}</tbody>
+    </table>`;
+  } else {
+    empEl.innerHTML='<div class="empty">Sin datos de empleados hoy</div>';
+  }
+
+  const openEl=document.getElementById('todayOpenCases');
+  const priority=open.filter(c=>c.max_urgency==='urgente'||c.requires_marcos).slice(0,5);
+  if(priority.length){
+    openEl.innerHTML=priority.map(c=>`
+      <div class="alert-item">
+        <div class="alert-dot ${c.max_urgency==='urgente'?'ad-red':'ad-amber'}"></div>
+        <div class="alert-text">
+          <div class="alert-title">${esc(c.contact_name||'?')} — ${esc(c.main_category||'sin categoría')}</div>
+          <div class="alert-meta">${esc(c.employee_name||'')} · ${esc(c.channel_name||'')} · ${c.minutes_waiting?Math.round(c.minutes_waiting)+' min':''}</div>
+        </div>
+      </div>`).join('');
+  } else {
+    openEl.innerHTML='<div class="empty"><div class="empty-icon">✅</div>Sin casos prioritarios abiertos</div>';
+  }
+}
+
+/* ─── AUTO REFRESH ───────────────────────────────────────── */
+setInterval(()=>{if(SB_URL&&SB_KEY)loadAll();},120000);
+</script>
+</body>
+</html>
