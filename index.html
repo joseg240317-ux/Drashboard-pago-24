@@ -612,8 +612,21 @@ async function sbGet(path, params={}){
   const url = new URL(SB_URL+'/rest/v1/'+path);
   Object.entries(params).forEach(([k,v])=>url.searchParams.append(k,v));
   const r = await fetch(url, {headers:{apikey:SB_KEY,Authorization:'Bearer '+SB_KEY,Accept:'application/json'}});
-  if(!r.ok) throw new Error('Supabase '+r.status);
+  if(!r.ok){
+    const detail = await r.json().catch(()=>({}));
+    const error = new Error('Supabase '+r.status+(detail.code ? ' ('+detail.code+')' : '')+
+      (r.status===401 || r.status===403 || detail.code==='42501'
+        ? ': acceso denegado. Revisar sesión, GRANT y RLS.' : ''));
+    error.status = r.status;
+    error.code = detail.code;
+    throw error;
+  }
   return r.json();
+}
+
+// Un fallo de permisos nunca representa una consulta sin resultados.
+function checkAccessError(error){
+  if(error.status===401 || error.status===403 || error.code==='42501') throw error;
 }
 
 function connect(){
@@ -629,11 +642,15 @@ async function loadAll(){
   document.getElementById('connStatus').textContent='Cargando...';
   try{
     const [open,resolved,empPerf] = await Promise.all([
-      sbGet('v_cases_open',{limit:'60',order:'last_inbound_at.desc.nullslast'}).catch(()=>
-        sbGet('conversations',{select:'id,status,resolution_status,case_type,business_issue,max_urgency,risk_level,responsible_area,requires_marcos,requires_follow_up,last_inbound_at,operational_summary,main_category',status:'neq.resuelto',limit:'60'}).catch(()=>[])),
-      sbGet('v_cases_resolved',{limit:'30',order:'resolved_at.desc.nullslast'}).catch(()=>
-        sbGet('conversations',{select:'id,status,resolution_status,case_type,main_category,max_urgency,resolution_minutes,first_response_minutes',resolution_status:'in.(resuelto_confirmado,cerrado)',limit:'30'}).catch(()=>[])),
-      sbGet('v_employee_performance').catch(()=>[])
+      sbGet('v_cases_open',{limit:'60',order:'last_inbound_at.desc.nullslast'}).catch(e=>{
+        checkAccessError(e);
+        return sbGet('conversations',{select:'id,status,resolution_status,case_type,business_issue,max_urgency,risk_level,responsible_area,requires_marcos,requires_follow_up,last_inbound_at,operational_summary,main_category',status:'neq.resuelto',limit:'60'}).catch(e=>{checkAccessError(e); return [];});
+      }),
+      sbGet('v_cases_resolved',{limit:'30',order:'resolved_at.desc.nullslast'}).catch(e=>{
+        checkAccessError(e);
+        return sbGet('conversations',{select:'id,status,resolution_status,case_type,main_category,max_urgency,resolution_minutes,first_response_minutes',resolution_status:'in.(resuelto_confirmado,cerrado)',limit:'30'}).catch(e=>{checkAccessError(e); return [];});
+      }),
+      sbGet('v_employee_performance').catch(e=>{checkAccessError(e); return [];})
     ]);
     DATA = {open, resolved, empPerf};
     renderAll();
